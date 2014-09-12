@@ -62,35 +62,30 @@ void doADDI();//OK
 void doSW();
 void doXORI();//OK
 
-/*Variaveis que nao armazenam dados, apenas instrucoes*/
 unsigned int pc, ri;
 unsigned int opcode, rd, rt, rs, shamt, funct;
 unsigned int imediato, endereco;
 
-/*Registradores*/
 int bancoDeRegistradores[32];
 int hi, lo;
 
-//Só recebe um quando recebe um syscall de fim de programa
 char verificaSaida;
 
-int read_int(unsigned int end); // lê um inteiro alinhado - endereços múltiplos de 4
-int read_byte(unsigned int end); // lê um byte - retorna inteiro com sinal
-int read_ubyte(unsigned int end); // lê um byte - retorna inteiro sem sinal
-void write_int(unsigned int end, int dado); // escreve um inteiro alinhado na memória
-void write_byte(unsigned int end, char byte); // escreve um byte na sua posição na memória
+int read_int(unsigned int end);
+int read_byte(unsigned int end);
+int read_ubyte(unsigned int end);
+void write_int(unsigned int end, int dado);
+void write_byte(unsigned int end, char byte);
 
-void dump_mem(int start, int end, char format);//imprime o conteudo da memoria a partir do endereco start até o end
-void dump_reg(char format);//imprime o conteudo dos registradores do MIPS, incluindo o banco de registradores e os registradores pc, hi e lo
+void dump_mem(int start, int end, char format);
+void dump_reg(char format);
 
-//Funcoes principais em ordem de chamada
 void run();
 void step();
 int	 fetch();
 void decode();
 void execute();
 
-//Funcoes auxiliares das principais
 int set_offset();
 void openData();
 void openText();
@@ -115,7 +110,7 @@ int main(){
  *
  */
 void openData(){
-    FILE *data, *text;
+    FILE *data;
 	int i, aux=0x2000, dadoTemporario;
 	char byte;
 
@@ -138,7 +133,7 @@ void openData(){
  *
  */
 void openText(){
-    FILE *data, *text;
+    FILE *text;
 	int i, aux=0, dadoTemporario;
 	char byte;
 
@@ -155,9 +150,6 @@ void openText(){
 	fclose(text);
 }
 
-/*Funcao criada com a finalidade de se chamar a funcao step() dentro de
-*um loop limitado a condicao do tamanho e se o programa deve ou não continuar
-*rodando determinado por uma variavel de parada*/
 void run(){
 	//Garantir que pc nao invada a memoria de dados e que o programa ainda nao foi encerrado
 	while(pc<0x2000 && !verificaSaida){
@@ -165,21 +157,18 @@ void run(){
 	}
 }
 
-//Funcao responsavel por chamar as funcoes fetch, decode e execute
 void step(){
 	fetch();
 	decode();
 	execute();
 }
 
-//Funcao responsavel pela leitura das instruções da memoria e coloca em ri, atualizando o pc para a proxima instrucao
 int	 fetch(){
 	ri = memoria[pc>>2];
 	pc = pc + 4;
 	return 0;
 }
 
-//Funcao responsavel por extrair todos os campos da instrucao lidas pela funcap fetch
 void decode(){
 	opcode = (ri>>26) & 0x3F;
 	rs = (ri>>21) & 0x1F;
@@ -191,11 +180,8 @@ void decode(){
 	endereco = ri & 0x3FFFFFF;
 }
 
-//Funcao responsavel por executar os comandos decodificado pela funcao decode
 void execute (){
-		//Switch criado para cada um dos casos existentes no enum do OPCODE
 		switch(opcode){
-
 			case EXT:
 			    switch(funct){
                 case ADD:
@@ -752,7 +738,7 @@ void write_int(unsigned int end, int dado){
  * \return int - byte recuperado da memoria
  *
  */
-int read_ubyte(unsigned int end){
+int read_byte(unsigned int end){
 	int aux = memoria[end >> 2];
 	int ubyte;
 
@@ -767,6 +753,10 @@ int read_ubyte(unsigned int end){
  * \return int - byte recuperado da memoria
  *
  */
-int read_byte(unsigned int end){
+int read_ubyte(unsigned int end){
+    unsigned int aux = memoria[end >> 2];
+	unsigned int ubyte;
 
+	ubyte = (aux >> (8*(end%4)) & 0xFF);
+	return ubyte;
 }
